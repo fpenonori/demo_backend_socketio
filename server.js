@@ -1,33 +1,37 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const sequelize = require('./config/database'); // Sequelize instance
-const chatSockets = require('./sockets/chatSockets'); // Import socket logic
+const sequelize = require('./config/database');
+const chatSockets = require('./sockets/chatSockets');
 const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-// Middleware
+const io = new Server(server, {
+  path: '/socket.io',
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
 app.use(express.json());
 
-// CORS middleware
 app.use(cors({
-  origin: 'http://localhost:3002',  // Update to match your frontend URL
+  origin: ['*'],
   methods: ['GET', 'POST'],
+  credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Chat routes
 const chatRoutes = require('./routes/chatRoutes');
 app.use('/api/chat', chatRoutes);
 
-// Set up Socket.IO
 chatSockets(io);
 
-// Sync the database
-sequelize.sync({ alter: true })  // Sync the Sequelize models with the database
+sequelize.sync({ alter: true })
   .then(() => {
     console.log('Database synced!');
     server.listen(3000, () => {

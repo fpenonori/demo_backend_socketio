@@ -1,6 +1,5 @@
 const Message = require('../models/messageModel');
 
-// Get chat messages by roomId
 exports.getMessages = async (req, res) => {
   const { roomId } = req.params;
   try {

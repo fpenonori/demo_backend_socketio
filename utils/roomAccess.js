@@ -3,11 +3,6 @@ const Reservation = require('../models/reservationModel');
 const normalizeId = (value) =>
   value !== undefined && value !== null ? String(value) : null;
 
-const toDbId = (value) => {
-  const normalized = normalizeId(value);
-  return normalized && /^\d+$/.test(normalized) ? Number(normalized) : normalized;
-};
-
 const extractUserId = (user) => {
   if (!user) {
     return null;
@@ -22,17 +17,17 @@ const extractUserId = (user) => {
 };
 
 const hasBookedReservation = async (studentId, teacherId) => {
-  const dbStudentId = toDbId(studentId);
-  const dbTeacherId = toDbId(teacherId);
+  const normalizedStudentId = normalizeId(studentId);
+  const normalizedTeacherId = normalizeId(teacherId);
 
-  if (dbStudentId == null || dbTeacherId == null) {
+  if (!normalizedStudentId || !normalizedTeacherId) {
     return false;
   }
 
   const reservation = await Reservation.findOne({
     where: {
-      student_id: dbStudentId,
-      teacher_id: dbTeacherId,
+      student_id: normalizedStudentId,
+      teacher_id: normalizedTeacherId,
       reservation_status: 'booked',
     },
   });

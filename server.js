@@ -38,7 +38,7 @@ app.use('/api/chat', requireAuthenticatedUser, chatRoutes);
 chatSockets(io);
 
 sequelize
-  .sync({ alter: true })
+  .sync({ alter: false })
   .then(() => {
     console.log('Database synced!');
     server.listen(process.env.PORT || 3000, () => {

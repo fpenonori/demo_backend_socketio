@@ -1,4 +1,12 @@
-﻿const normalizeId = (value) => (value !== undefined && value !== null ? String(value) : null);
+const Reservation = require('../models/reservationModel');
+
+const normalizeId = (value) =>
+  value !== undefined && value !== null ? String(value) : null;
+
+const toDbId = (value) => {
+  const normalized = normalizeId(value);
+  return normalized && /^\d+$/.test(normalized) ? Number(normalized) : normalized;
+};
 
 const extractUserId = (user) => {
   if (!user) {
@@ -13,7 +21,26 @@ const extractUserId = (user) => {
   );
 };
 
-const canAccessRoom = (user, studentId, teacherId) => {
+const hasBookedReservation = async (studentId, teacherId) => {
+  const dbStudentId = toDbId(studentId);
+  const dbTeacherId = toDbId(teacherId);
+
+  if (dbStudentId == null || dbTeacherId == null) {
+    return false;
+  }
+
+  const reservation = await Reservation.findOne({
+    where: {
+      student_id: dbStudentId,
+      teacher_id: dbTeacherId,
+      reservation_status: 'booked',
+    },
+  });
+
+  return Boolean(reservation);
+};
+
+const canAccessRoom = async (user, studentId, teacherId) => {
   const userId = extractUserId(user);
   if (!user || !userId) {
     return false;
@@ -23,15 +50,16 @@ const canAccessRoom = (user, studentId, teacherId) => {
     return true;
   }
 
-  if (user.role === 'STUDENT') {
-    return userId === normalizeId(studentId);
+  const isStudentOwner =
+    user.role === 'STUDENT' && userId === normalizeId(studentId);
+  const isTeacherOwner =
+    user.role === 'TEACHER' && userId === normalizeId(teacherId);
+  if (!isStudentOwner && !isTeacherOwner) {
+    return false;
   }
 
-  if (user.role === 'TEACHER') {
-    return userId === normalizeId(teacherId);
-  }
-
-  return false;
+  const bookedReservation = await hasBookedReservation(studentId, teacherId);
+  return bookedReservation;
 };
 
 const parseRoomId = (roomId) => {
@@ -47,7 +75,7 @@ const parseRoomId = (roomId) => {
   return { studentId: parts[1], teacherId: parts[2] };
 };
 
-const canAccessRoomFromRoute = (user, roomId) => {
+const canAccessRoomFromRoute = async (user, roomId) => {
   const { studentId, teacherId } = parseRoomId(roomId);
   if (!studentId || !teacherId) {
     return false;
@@ -63,4 +91,3 @@ module.exports = {
   parseRoomId,
   canAccessRoomFromRoute,
 };
-

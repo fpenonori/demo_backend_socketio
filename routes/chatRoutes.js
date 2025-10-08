@@ -4,9 +4,10 @@ const { canAccessRoomFromRoute } = require('../utils/roomAccess');
 
 const router = express.Router();
 
-router.get('/messages/:roomId', (req, res, next) => {
+router.get('/messages/:roomId', async (req, res, next) => {
   const { roomId } = req.params;
-  if (!canAccessRoomFromRoute(req.chatUser, roomId)) {
+  const allowed = await canAccessRoomFromRoute(req.chatUser, roomId);
+  if (!allowed) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -14,4 +15,3 @@ router.get('/messages/:roomId', (req, res, next) => {
 });
 
 module.exports = router;
-

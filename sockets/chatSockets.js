@@ -8,7 +8,8 @@ module.exports = (io) => {
     console.log('User connected', extractUserId(socket.data.user));
 
     socket.on('joinRoom', async ({ studentId, teacherId }) => {
-      if (!canAccessRoom(socket.data.user, studentId, teacherId)) {
+      const allowed = await canAccessRoom(socket.data.user, studentId, teacherId);
+      if (!allowed) {
         return socket.emit('error', { message: 'Unauthorized room join' });
       }
 
@@ -24,7 +25,8 @@ module.exports = (io) => {
     });
 
     socket.on('sendMessage', async ({ studentId, teacherId, message }) => {
-      if (!canAccessRoom(socket.data.user, studentId, teacherId)) {
+      const allowed = await canAccessRoom(socket.data.user, studentId, teacherId);
+      if (!allowed) {
         return socket.emit('error', { message: 'Unauthorized room message' });
       }
 
